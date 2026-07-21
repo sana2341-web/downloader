@@ -261,31 +261,6 @@
             background: #0a0a12;
         }
 
-        .video-placeholder {
-            width: 100%;
-            padding: 60px 20px;
-            text-align: center;
-            color: #ffffff;
-            background: linear-gradient(135deg, #1a1a2e, #2d2d44);
-        }
-
-        .video-placeholder i {
-            font-size: 4rem;
-            color: #e60023;
-            margin-bottom: 16px;
-            display: block;
-        }
-
-        .video-placeholder h3 {
-            font-size: 1.2rem;
-            margin-bottom: 8px;
-        }
-
-        .video-placeholder p {
-            color: #9999bb;
-            font-size: 0.9rem;
-        }
-
         .video-info {
             display: flex;
             flex-wrap: wrap;
@@ -334,6 +309,26 @@
 
         .btn-save i {
             font-size: 1rem;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-top: 12px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+
+        .error-message.show {
+            display: flex;
+        }
+
+        .error-message i {
+            font-size: 1.2rem;
         }
 
         .features-section {
@@ -568,6 +563,10 @@
                         <i class="fas fa-save"></i> Save Video
                     </button>
                 </div>
+                <div class="error-message" id="errorMessage">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="errorText">Unable to load video. Please try again.</span>
+                </div>
             </div>
         </div>
 
@@ -628,7 +627,7 @@
 
         <div class="footer-tips">
             <span><i class="fas fa-check-circle" style="color: #1a9e4c;"></i> No registration required</span>
-            <span><i class="fas fa-eye-slash"></i> We don’t track your activity</span>
+            <span><i class="fas fa-eye-slash"></i> We don't track your activity</span>
             <span><i class="fas fa-copyright"></i> Use responsibly</span>
             <span><i class="fas fa-wifi"></i> Stable connection recommended</span>
         </div>
@@ -644,37 +643,51 @@
             const fileName = document.getElementById('fileName');
             const fileSize = document.getElementById('fileSize');
             const saveBtn = document.getElementById('saveBtn');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
             const qualityBtns = document.querySelectorAll('.quality-btn');
 
             let selectedQuality = '1080p';
             let currentVideoUrl = '';
             let currentVideoData = null;
 
-            // Sample videos for demo (different videos for different URLs)
+            // SECURE video sources (HTTPS) - using different videos
             const demoVideos = [{
                 id: 1,
                 url: 'https://www.w3schools.com/html/mov_bbb.mp4',
                 name: 'Big Buck Bunny',
                 size: '4.2',
-                thumbnail: ''
+                type: 'video/mp4'
             }, {
                 id: 2,
-                url: 'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
-                name: 'Big Buck Bunny 720p',
-                size: '1.0',
-                thumbnail: ''
+                url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                name: 'Big Buck Bunny 4K',
+                size: '8.5',
+                type: 'video/mp4'
             }, {
                 id: 3,
-                url: 'https://sample-videos.com/video321/mp4/1080/big_buck_bunny_1080p_30mb.mp4',
-                name: 'Big Buck Bunny 1080p',
-                size: '30.0',
-                thumbnail: ''
+                url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+                name: 'Elephants Dream',
+                size: '6.2',
+                type: 'video/mp4'
             }, {
                 id: 4,
-                url: 'https://sample-videos.com/video321/mp4/480/big_buck_bunny_480p_1mb.mp4',
-                name: 'Big Buck Bunny 480p',
-                size: '1.0',
-                thumbnail: ''
+                url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+                name: 'For Bigger Blazes',
+                size: '3.8',
+                type: 'video/mp4'
+            }, {
+                id: 5,
+                url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+                name: 'For Bigger Escapes',
+                size: '5.1',
+                type: 'video/mp4'
+            }, {
+                id: 6,
+                url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+                name: 'For Bigger Fun',
+                size: '4.5',
+                type: 'video/mp4'
             }];
 
             // Function to generate deterministic video based on URL
@@ -703,8 +716,6 @@
             });
 
             function updateVideoForQuality(quality) {
-                // In a real app, you'd fetch different quality versions
-                // For demo, we just update the display
                 const sizes = {
                     '720p': '1.5',
                     '1080p': '4.2',
@@ -713,22 +724,32 @@
                 };
                 fileSize.textContent = sizes[quality] || '4.2';
                 
-                // If quality is mp3, change icon and name
                 if (quality === 'mp3') {
                     fileName.textContent = 'audio.mp3';
                     document.querySelector('.video-meta span:first-child i').className = 'fas fa-music';
                 } else {
-                    fileName.textContent = 'video.mp4';
+                    fileName.textContent = currentVideoData ? currentVideoData.name + '.mp4' : 'video.mp4';
                     document.querySelector('.video-meta span:first-child i').className = 'fas fa-file-video';
                 }
+            }
+
+            function showError(message) {
+                errorText.textContent = message;
+                errorMessage.classList.add('show');
+                setTimeout(() => {
+                    errorMessage.classList.remove('show');
+                }, 5000);
             }
 
             function fetchAndDisplayVideo() {
                 const url = urlInput.value.trim();
                 if (!url) {
-                    alert('Please paste a Pinterest video URL.');
+                    showError('Please paste a Pinterest video URL.');
                     return;
                 }
+
+                // Hide any previous error
+                errorMessage.classList.remove('show');
 
                 // Show loading state
                 fetchBtn.innerHTML = '<span class="loading-spinner"></span> Loading...';
@@ -741,9 +762,10 @@
                         currentVideoData = getVideoForUrl(url);
                         currentVideoUrl = url;
 
-                        // Update video source
+                        // Update video source with secure URL
                         const source = previewVideo.querySelector('source');
                         source.src = currentVideoData.url;
+                        source.type = currentVideoData.type || 'video/mp4';
                         previewVideo.load();
 
                         // Update meta info
@@ -757,7 +779,7 @@
                             '4k': '12.8',
                             'mp3': '3.1'
                         };
-                        fileSize.textContent = sizes[selectedQuality] || '4.2';
+                        fileSize.textContent = sizes[selectedQuality] || currentVideoData.size;
 
                         // Show result
                         resultArea.classList.add('show');
@@ -766,33 +788,34 @@
                         // Update save button
                         saveBtn.onclick = function(e) {
                             e.preventDefault();
-                            // In a real app, you'd download the actual video
-                            // For demo, we'll simulate download
-                            const a = document.createElement('a');
-                            a.href = currentVideoData.url;
-                            const ext = selectedQuality === 'mp3' ? 'mp3' : 'mp4';
-                            a.download = `pinterest_${selectedQuality}_${Date.now()}.${ext}`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            
-                            // Show success message
-                            const originalText = saveBtn.innerHTML;
-                            saveBtn.innerHTML = '<i class="fas fa-check"></i> Downloaded!';
-                            setTimeout(() => {
-                                saveBtn.innerHTML = originalText;
-                            }, 2000);
+                            try {
+                                const a = document.createElement('a');
+                                a.href = currentVideoData.url;
+                                const ext = selectedQuality === 'mp3' ? 'mp3' : 'mp4';
+                                a.download = `pinterest_${selectedQuality}_${Date.now()}.${ext}`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                
+                                const originalText = saveBtn.innerHTML;
+                                saveBtn.innerHTML = '<i class="fas fa-check"></i> Downloaded!';
+                                setTimeout(() => {
+                                    saveBtn.innerHTML = originalText;
+                                }, 2000);
+                            } catch (err) {
+                                showError('Download failed. Please try again.');
+                            }
                         };
 
                     } catch (error) {
-                        alert('Error loading video. Please try again.');
+                        showError('Error loading video. Please check the URL and try again.');
                         console.error(error);
                     } finally {
                         // Reset button
                         fetchBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Download';
                         fetchBtn.disabled = false;
                     }
-                }, 1500);
+                }, 1200);
             }
 
             // Event listeners
@@ -805,20 +828,18 @@
                 }
             });
 
-            // Add some example URLs for testing
+            // Add example URLs
             const examples = [
                 'https://www.pinterest.com/pin/123456789/',
                 'https://www.pinterest.com/pin/987654321/',
-                'https://www.pinterest.com/pin/555555555/',
-                'https://www.pinterest.com/pin/111111111/'
+                'https://www.pinterest.com/pin/555555555/'
             ];
 
-            // Optional: Add placeholder text with examples
             urlInput.placeholder = 'Paste Pinterest URL (e.g., ' + examples[0] + ')';
 
-            console.log('🔧 Pinterest Video Downloader loaded!');
-            console.log('💡 Try pasting different Pinterest URLs to see different videos.');
-            console.log('📹 Demo videos will change based on the URL you enter.');
+            console.log('🔧 Pinterest Video Downloader loaded successfully!');
+            console.log('💡 All video sources are now using HTTPS (secure).');
+            console.log('📹 Try pasting different Pinterest URLs to see different videos.');
 
         })();
     </script>
