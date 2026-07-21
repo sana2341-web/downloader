@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PinFetch Pro - Pinterest Video & Media Downloader</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        pin: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            500: '#e60023',
+                            600: '#cc001f',
+                            700: '#ad001a',
+                            800: '#8e0015',
+                            900: '#750012',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-short': 'bounce 1s infinite 2',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Glassmorphism utility classes */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .dark .glass-card {
+            background: rgba(24, 24, 27, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(230, 0, 35, 0.4);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(230, 0, 35, 0.8);
+        }
+
+        /* Gradient background effects */
+        .bg-glow {
+            background: radial-gradient(circle at 50% 0%, rgba(230, 0, 35, 0.15), transparent 70%);
+        }
+
+        /* Animated pulse ring for download button */
+        .pulse-ring {
+            box-shadow: 0 0 0 0 rgba(230, 0, 35, 0.6);
+            animation: ring-pulse 2s infinite;
+        }
+
+        @keyframes ring-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(230, 0, 35, 0.5);
+            }
+            70% {
+                box-shadow: 0 0 0 15px rgba(230, 0, 35, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(230, 0, 35, 0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 dark:bg-zinc-950 dark:text-gray-100 min-h-screen flex flex-col justify-between selection:bg-pin-500 selection:text-white">
+
+    <!-- Header / Navigation Bar -->
+    <header class="sticky top-0 z-40 w-full glass-card border-b border-gray-200 dark:border-zinc-800 transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <a href="#" class="flex items-center space-x-3 group">
+                <div class="w-10 h-10 rounded-full bg-pin-500 flex items-center justify-center text-white text-xl font-black shadow-lg shadow-pin-500/30 group-hover:scale-105 transition-transform">
+                    <i class="fa-brands fa-pinterest"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-xl font-extrabold tracking-tight text-gray-900 dark:text-white flex items-center gap-1.5">
+                        PinFetch <span class="bg-pin-500 text-white text-xs px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Pro</span>
+                    </span>
+                    <span class="text-xs text-gray-500 dark:text-zinc-400 font-medium hidden sm:inline">Pinterest Video & Media Saver</span>
+                </div>
+            </a>
+
+            <!-- Header Actions -->
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <!-- Language Selector -->
+                <div class="relative">
+                    <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-gray-100 dark:bg-zinc-800 text-xs sm:text-sm font-medium py-1.5 px-3 pr-8 rounded-lg border border-gray-200 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-pin-500 cursor-pointer">
+                        <option value="en">🇺🇸 English</option>
+                        <option value="es">🇪🇸 Español</option>
+                        <option value="fr">🇫🇷 Français</option>
+                        <option value="de">🇩🇪 Deutsch</option>
+                        <option value="pt">🇧🇷 Português</option>
+                        <option value="hi">🇮🇳 हिन्दी</option>
+                    </select>
+                </div>
+
+                <!-- Dark / Light Mode Toggle -->
+                <button id="themeToggle" onclick="toggleDarkMode()" class="w-9 h-9 rounded-lg bg-gray-100 dark:bg-zinc-800 flex items-center justify-center text-gray-600 dark:text-zinc-300 hover:text-pin-500 dark:hover:text-pin-500 transition-colors focus:outline-none" title="Toggle Dark/Light Mode">
+                    <i id="themeIcon" class="fa-solid fa-moon"></i>
+                </button>
+
+                <!-- History Drawer Trigger -->
+                <button onclick="toggleHistoryModal()" class="relative bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 font-medium px-3 py-1.5 rounded-lg text-xs sm:text-sm flex items-center space-x-2 transition-colors">
+                    <i class="fa-solid fa-clock-rotate-left text-pin-500"></i>
+                    <span class="hidden sm:inline" data-i18n="history">History</span>
+                    <span id="historyBadge" class="hidden ml-1 bg-pin-500 text-white text-xs px-1.5 py-0.2 rounded-full font-bold">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow bg-glow">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+            
+            <!-- Hero Header Section -->
+            <div class="text-center space-y-4 mb-8">
+                <div class="inline-flex items-center space-x-2 bg-pin-50 dark:bg-pin-900/30 border border-pin-100 dark:border-pin-800/50 text-pin-600 dark:text-pin-400 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span data-i18n="fastFreeBadge">Fast, Free & Unlimited Pinterest Downloader</span>
+                </div>
+                <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-gray-900 dark:text-white tracking-tight leading-tight">
+                    <span data-i18n="heroTitle">Download Pinterest</span> 
+                    <span class="text-pin-500 underline decoration-pin-500/30">Videos</span>, 
+                    <span data-i18n="heroGIFs">GIFs</span> & <span data-i18n="heroPhotos">HD Photos</span>
+                </h1>
+                <p class="max-w-2xl mx-auto text-sm sm:text-lg text-gray-600 dark:text-zinc-300 font-normal" data-i18n="heroSubtitle">
+                    Paste any Pinterest Link or Pin URL below to extract high-resolution MP4 videos, full HD images, Story Pins, and MP3 audio in seconds.
+                </p>
+            </div>
+
+            <!-- Downloader Input Box Card -->
+            <div class="glass-card rounded-2xl shadow-2xl p-4 sm:p-6 mb-10 transition-all border border-gray-200 dark:border-zinc-800">
+                <form id="downloaderForm" onsubmit="handleDownloadSubmit(event)" class="space-y-4">
+                    <div class="relative flex flex-col sm:flex-row items-center gap-3">
+                        <div class="relative w-full">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 dark:text-zinc-500">
+                                <i class="fa-solid fa-link text-lg"></i>
+                            </div>
+                            <input 
+                                type="url" 
+                                id="pinUrlInput" 
+                                placeholder="Paste Pinterest link here (e.g., https://pin.it/xyz or https://pinterest.com/pin/12345...)" 
+                                required
+                                class="w-full pl-11 pr-24 py-4 rounded-xl bg-gray-50 dark:bg-zinc-900/90 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-500 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-pin-500 focus:border-transparent transition-all"
+                            />
+                            
+                            <!-- Inside Input Quick Buttons -->
+                            <div class="absolute inset-y-0 right-0 pr-2 flex items-center space-x-1">
+                                <button 
+                                    type="button" 
+                                    onclick="clearInput()" 
+                                    id="clearBtn"
+                                    class="hidden text-gray-400 hover:text-gray-600 dark:hover:text-zinc-200 p-2 rounded-lg transition-colors"
+                                    title="Clear text"
+                                >
+                                    <i class="fa-solid fa-xmark text-lg"></i>
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onclick="pasteFromClipboard()" 
+                                    class="bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                                    title="Paste from clipboard"
+                                >
+                                    <i class="fa-regular fa-clipboard"></i>
+                                    <span class="hidden sm:inline" data-i18n="paste">Paste</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Fetch / Download Action Button -->
+                        <button 
+                            type="submit" 
+                            id="downloadSubmitBtn"
+                            class="w-full sm:w-auto px-8 py-4 bg-pin-500 hover:bg-pin-600 active:bg-pin-700 text-white font-bold text-base rounded-xl shadow-lg shadow-pin-500/40 hover:shadow-pin-500/60 transition-all flex items-center justify-center space-x-2 shrink-0 cursor-pointer pulse-ring"
+                        >
+                            <i class="fa-solid fa-circle-down text-lg"></i>
+                            <span data-i18n="downloadBtn">DOWNLOAD</span>
+                        </button>
+                    </div>
+
+                    <!-- URL Quick Helper & Format Badges -->
+                    <div class="flex flex-wrap items-center justify-between text-xs text-gray-500 dark:text-zinc-400 pt-1 gap-2">
+                        <div class="flex items-center space-x-2 overflow-x-auto py-1">
+                            <span class="font-medium" data-i18n="supportedFormat">Supported:</span>
+                            <span class="bg-gray-200 dark:bg-zinc-800 px-2 py-0.5 rounded text-gray-700 dark:text-zinc-300 font-mono">.mp4</span>
+                            <span class="bg-gray-200 dark:bg-zinc-800 px-2 py-0.5 rounded text-gray-700 dark:text-zinc-300 font-mono">.jpg</span>
+                            <span class="bg-gray-200 dark:bg-zinc-800 px-2 py-0.5 rounded text-gray-700 dark:text-zinc-300 font-mono">.gif</span>
+                            <span class="bg-gray-200 dark:bg-zinc-800 px-2 py-0.5 rounded text-gray-700 dark:text-zinc-300 font-mono">Story Pins</span>
+                            <span class="bg-gray-200 dark:bg-zinc-800 px-2 py-0.5 rounded text-gray-700 dark:text-zinc-300 font-mono">pin.it</span>
+                        </div>
+                        <div class="flex items-center gap-1 text-pin-600 dark:text-pin-400 font-medium">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <span data-i18n="safeGuarantee">100% Safe & Direct Links</span>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Sample Pins Test Drive Section -->
+                <div class="mt-6 pt-5 border-t border-gray-200 dark:border-zinc-800">
+                    <div class="text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-pin-500"></i>
+                        <span data-i18n="tryDemo">Try Demo Pins (Click to test instantly):</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <button onclick="loadSamplePin('video_recipe')" class="flex items-center justify-center gap-2 p-2 bg-gray-100 dark:bg-zinc-900 hover:bg-pin-50 dark:hover:bg-pin-900/20 hover:border-pin-500 border border-gray-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-gray-800 dark:text-zinc-200 transition-all text-left">
+                            <i class="fa-solid fa-film text-pin-500"></i>
+                            <span class="truncate">HD Recipe Video</span>
+                        </button>
+                        <button onclick="loadSamplePin('video_diy')" class="flex items-center justify-center gap-2 p-2 bg-gray-100 dark:bg-zinc-900 hover:bg-pin-50 dark:hover:bg-pin-900/20 hover:border-pin-500 border border-gray-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-gray-800 dark:text-zinc-200 transition-all text-left">
+                            <i class="fa-solid fa-video text-purple-500"></i>
+                            <span class="truncate">Aesthetic Reel</span>
+                        </button>
+                        <button onclick="loadSamplePin('photo_4k')" class="flex items-center justify-center gap-2 p-2 bg-gray-100 dark:bg-zinc-900 hover:bg-pin-50 dark:hover:bg-pin-900/20 hover:border-pin-500 border border-gray-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-gray-800 dark:text-zinc-200 transition-all text-left">
+                            <i class="fa-solid fa-image text-emerald-500"></i>
+                            <span class="truncate">4K Photo Pin</span>
+                        </button>
+                        <button onclick="loadSamplePin('gif_animation')" class="flex items-center justify-center gap-2 p-2 bg-gray-100 dark:bg-zinc-900 hover:bg-pin-50 dark:hover:bg-pin-900/20 hover:border-pin-500 border border-gray-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-gray-800 dark:text-zinc-200 transition-all text-left">
+                            <i class="fa-solid fa-bolt text-amber-500"></i>
+                            <span class="truncate">Animated GIF</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Extraction Loading Status State -->
+            <div id="loadingState" class="hidden glass-card rounded-2xl p-8 mb-10 text-center space-y-4 border border-pin-500/30">
+                <div class="relative w-16 h-16 mx-auto">
+                    <div class="absolute inset-0 rounded-full border-4 border-pin-200 dark:border-zinc-800"></div>
+                    <div class="absolute inset-0 rounded-full border-4 border-pin-500 border-t-transparent animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-pin-500 text-lg">
+                        <i class="fa-brands fa-pinterest"></i>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white" id="loadingStatusText">Analyzing Pinterest Link...</h3>
+                    <p class="text-xs text-gray-500 dark:text-zinc-400">Fetching high quality media streams, metadata, and thumbnail previews.</p>
+                </div>
+                <!-- Simulated progress bar -->
+                <div class="w-full bg-gray-200 dark:bg-zinc-800 h-2 rounded-full overflow-hidden max-w-md mx-auto">
+                    <div id="loadingBar" class="bg-pin-500 h-full w-0 transition-all duration-300"></div>
+                </div>
+            </div>
+
+            <!-- Download Result Showcase Card -->
+            <div id="resultCard" class="hidden glass-card rounded-2xl shadow-2xl p-6 mb-12 border border-pin-500/40 transition-all">
+                <div class="flex flex-col lg:flex-row gap-6 items-start">
+                    
+                    <!-- Left: Media Preview & Embedded Player -->
+                    <div class="w-full lg:w-1/2 space-y-4">
+                        <div id="mediaContainer" class="relative bg-black rounded-xl overflow-hidden aspect-video shadow-lg group">
+                            <!-- Video Player (dynamically updated) -->
+                            <video id="resultVideo" controls class="w-full h-full object-contain hidden" poster="">
+                                Your browser does not support the video tag.
+                            </video>
+                            
+                            <!-- Image / GIF Preview (dynamically updated) -->
+                            <img id="resultImage" src="" alt="Pinterest Media Preview" class="w-full h-full object-contain hidden" />
+
+                            <!-- Custom Badge Overlay -->
+                            <div class="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white text-xs px-2.5 py-1 rounded-md font-semibold flex items-center gap-1.5 z-10">
+                                <i id="mediaTypeIcon" class="fa-solid fa-video text-pin-500"></i>
+                                <span id="mediaTypeLabel">HD Video</span>
+                            </div>
+                        </div>
+
+                        <!-- Video Player Quick Utilities -->
+                        <div id="videoExtraControls" class="flex items-center justify-between bg-gray-100 dark:bg-zinc-900 p-3 rounded-xl text-xs text-gray-700 dark:text-zinc-300">
+                            <div class="flex items-center space-x-3">
+                                <span><i class="fa-solid fa-gauge text-pin-500 mr-1"></i> Speed:</span>
+                                <select onchange="changeVideoSpeed(this.value)" class="bg-gray-200 dark:bg-zinc-800 rounded px-2 py-1 focus:outline-none">
+                                    <option value="1.0">1.0x (Normal)</option>
+                                    <option value="0.75">0.75x</option>
+                                    <option value="1.25">1.25x</option>
+                                    <option value="1.5">1.5x</option>
+                                    <option value="2.0">2.0x</option>
+                                </select>
+                            </div>
+                            <button onclick="toggleLoopVideo()" id="loopBtn" class="hover:text-pin-500 flex items-center gap-1">
+                                <i class="fa-solid fa-repeat"></i> Loop: <span id="loopStatus">Off</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Pin Metadata & Multi-Option Download Buttons -->
+                    <div class="w-full lg:w-1/2 space-y-5">
+                        <!-- Pin Header Metadata -->
+                        <div class="space-y-2 border-b border-gray-200 dark:border-zinc-800 pb-4">
+                            <div class="flex items-center space-x-3">
+                                <img id="authorAvatar" src="https://placehold.co/100x100/e60023/ffffff?text=PIN" alt="Author Avatar" class="w-10 h-10 rounded-full border-2 border-pin-500 object-cover" />
+                                <div>
+                                    <p id="authorName" class="text-sm font-bold text-gray-900 dark:text-white">Pinterest Creator</p>
+                                    <p id="boardName" class="text-xs text-gray-500 dark:text-zinc-400">Board: Ideas & Tutorials</p>
+                                </div>
+                            </div>
+                            <h2 id="pinTitle" class="text-lg font-bold text-gray-900 dark:text-white line-clamp-2 leading-snug">
+                                Pinterest Pin Title
+                            </h2>
+                            <p id="pinDescription" class="text-xs text-gray-600 dark:text-zinc-400 line-clamp-2">
+                                Pin description snippet will appear here...
+                            </p>
+                            
+                            <!-- Stats badges -->
+                            <div class="flex items-center space-x-4 text-xs text-gray-500 dark:text-zinc-400 pt-1">
+                                <span id="pinLikes"><i class="fa-solid fa-heart text-red-500 mr-1"></i> 14.2k</span>
+                                <span id="pinSaves"><i class="fa-solid fa-bookmark text-pin-500 mr-1"></i> 8.5k</span>
+                                <span id="pinDuration"><i class="fa-solid fa-clock mr-1"></i> 00:45</span>
+                            </div>
+                        </div>
+
+                        <!-- Available Download Resolution Options Matrix -->
+                        <div class="space-y-3">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-zinc-400 flex items-center gap-1.5">
+                                <i class="fa-solid fa-download text-pin-500"></i>
+                                Select Quality & Download Format:
+                            </h3>
+
+                            <div id="downloadLinksList" class="space-y-2.5">
+                                <!-- Generated Download Item 1: Full HD Video -->
+                                <div class="flex items-center justify-between p-3 rounded-xl bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 hover:border-pin-500 transition-colors">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-9 h-9 rounded-lg bg-pin-500/10 text-pin-500 flex items-center justify-center font-bold text-xs">
+                                            1080p
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-bold text-gray-900 dark:text-white">MP4 Video (Full HD)</p>
+                                            <p class="text-[11px] text-gray-500 dark:text-zinc-400">High Bitrate • ~18.4 MB</p>
+                                        </div>
+                                    </div>
+                                    <button onclick="triggerDirectDownload('1080p')" class="px-4 py-2 bg-pin-500 hover:bg-pin-600 active:bg-pin-700 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow">
+                                        <i class="fa-solid fa-download"></i> Download
+                                    </button>
+                                </div>
+
+                                <!-- Generated Download Item 2: Standard HD Video -->
+                                <div class="flex items-center justify-between p-3 rounded-xl bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 hover:border-pin-500 transition-colors">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-9 h-9 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold text-xs">
+                                            720p
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-bold text-gray-900 dark:text-white">MP4 Video (HD Standard)</p>
+                                            <p class="text-[11px] text-gray-500 dark:text-zinc-400">Optimized Mobile • ~9.2 MB</p>
+                                        </div>
+                                    </div>
+                                    <button onclick="triggerDirectDownload('720p')" class="px-4 py-2 bg-gray-800 hover:bg-gray-900 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5">
+                                        <i class="fa-solid fa-download"></i> Download
+                                    </button>
+                                </div>
+
+                                <!-- Generated Download Item 3: Audio MP3 Extra -->
+                                <div class="flex items-center justify-between p-3 rounded-xl bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 hover:border-pin-500 transition-colors">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-xs">
+                                            MP3
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-bold text-gray-900 dark:text-white">Audio Only (320 kbps)</p>
+                                            <p class="text-[11px] text-gray-500 dark:text-zinc-400">Extracted Soundtrack • ~2.1 MB</p>
+                                        </div>
+                                    </div>
+                                    <button onclick="triggerDirectDownload('audio')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5">
+                                        <i class="fa-solid fa-music"></i> Save MP3
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Secondary Actions: Copy Media Link & Cover Download -->
+                        <div class="flex flex-wrap items-center gap-2 pt-2">
+                            <button onclick="copyDirectMediaUrl()" class="flex-1 py-2 px-3 bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                                <i class="fa-regular fa-copy"></i> Copy Direct Link
+                            </button>
+                            <button onclick="triggerDirectDownload('cover')" class="flex-1 py-2 px-3 bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                                <i class="fa-regular fa-image"></i> HD Cover Photo
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Why Choose PinFetch Pro Features Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+                <div class="glass-card p-6 rounded-2xl border border-gray-200 dark:border-zinc-800 space-y-3 hover:border-pin-500/50 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-pin-500/10 text-pin-500 flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-gauge-high"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-gray-900 dark:text-white" data-i18n="feat1Title">Lightning Fast Conversion</h3>
+                    <p class="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed" data-i18n="feat1Desc">
+                        Our cloud parser extracts original media URLs instantly without compressing or degrading video bitrates.
+                    </p>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl border border-gray-200 dark:border-zinc-800 space-y-3 hover:border-pin-500/50 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-pin-500/10 text-pin-500 flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-ban"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-gray-900 dark:text-white" data-i18n="feat2Title">No Watermarks or Logos</h3>
+                    <p class="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed" data-i18n="feat2Desc">
+                        Download clean Pinterest videos and GIF animations in pure MP4 format, completely free of any unwanted overlays.
+                    </p>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl border border-gray-200 dark:border-zinc-800 space-y-3 hover:border-pin-500/50 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-pin-500/10 text-pin-500 flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-mobile-screen-button"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-gray-900 dark:text-white" data-i18n="feat3Title">All Devices Supported</h3>
+                    <p class="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed" data-i18n="feat3Desc">
+                        Fully responsive experience designed for Android phones, iPhones (Safari), iPad, Mac OS, Windows, and Linux.
+                    </p>
+                </div>
+            </div>
+
+            <!-- How To Download Step-by-Step Interactive Guide -->
+            <div class="glass-card rounded-2xl p-6 sm:p-8 mb-16 border border-gray-200 dark:border-zinc-800">
+                <div class="text-center space-y-2 mb-8">
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white" data-i18n="howToTitle">
+                        How to Download Videos from Pinterest
+                    </h2>
+                    <p class="text-xs sm:text-sm text-gray-600 dark:text-zinc-400" data-i18n="howToSubtitle">
+                        Follow these simple steps on Mobile App or Desktop Browser to save videos directly to your gallery.
+                    </p>
+                </div>
+
+                <!-- Platform Tabs Switcher -->
+                <div class="flex justify-center border-b border-gray-200 dark:border-zinc-800 mb-8">
+                    <button onclick="switchGuideTab('app')" id="tabApp" class="px-6 py-3 font-bold text-sm border-b-2 border-pin-500 text-pin-500 flex items-center gap-2 transition-all">
+                        <i class="fa-solid fa-mobile-button"></i> Pinterest App (Android / iOS)
+                    </button>
+                    <button onclick="switchGuideTab('web')" id="tabWeb" class="px-6 py-3 font-bold text-sm border-b-2 border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white flex items-center gap-2 transition-all">
+                        <i class="fa-solid fa-laptop"></i> Desktop Web Browser
+                    </button>
+                </div>
+
+                <!-- Tab Content 1: App Instructions -->
+                <div id="guideAppContent" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-gray-50 dark:bg-zinc-900 p-5 rounded-xl border border-gray-200 dark:border-zinc-800 space-y-3 relative">
+                        <span class="absolute top-4 right-4 w-7 h-7 bg-pin-500 text-white rounded-full flex items-center justify-center font-bold text-xs">1</span>
+                        <div class="text-pin-500 text-2xl"><i class="fa-solid fa-share-nodes"></i></div>
+                        <h4 class="font-bold text-sm text-gray-900 dark:text-white">Copy Pin Link</h4>
+                        <p class="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed">
+                            Open the Pinterest app on your phone. Find the video pin you want to save, tap the <strong>Share icon</strong> (or 3 dots) and select <strong>"Copy Link"</strong>.
+                        </p>
+                    </div>
+
+                    <div class="bg-gray-50 dark:bg-zinc-900 p-5 rounded-xl border border-gray-200 dark:border-zinc-800 space-y-3 relative">
+                        <span class="absolute top-4 right-4 w-7 h-7 bg-pin-500 text-white rounded-full flex items-center justify-center font-bold text-xs">2</span>
+                        <div class="text-pin-500 text-2xl"><i class="fa-regular fa-paste"></i></div>
+                        <h4 class="font-bold text-sm text-gray-900 dark:text-white">Paste URL into PinFetch</h4>
+                        <p class="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed">
+                            Open PinFetch Pro in your phone browser, click <strong>"Paste"</strong> button to insert your Pinterest link, and tap <strong>"DOWNLOAD"</strong>.
+                        </p>
+                    </div>
+
+                    <div class="bg-gray-50 dark:bg-zinc-900 p-5 rounded-xl border border-gray-200 dark:border-zinc-800 space-y-3 relative">
+                        <span class="absolute top-4 right-4 w-7 h-7 bg-pin-500 text-white rounded-full flex items-center justify-center font-bold text-xs">3</span>
+                        <div class="text-pin-500 text-2xl"><i class="fa-solid fa-download"></i></div>
+                        <h4 class="font-bold text-sm text-gray-900 dark:text-white">Save Video to Gallery</h4>
+                        <p class="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed">
+                            Choose your preferred quality (1080p HD, 720p or MP3 sound) and press Download to save it directly to your phone gallery or files.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Tab Content 2: Desktop Web Instructions -->
+                <div id="guideWebContent" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-gray-50 dark:bg-zinc-900 p-5 rounded-xl border border-gray-200 dark:border-zinc-800 space-y-3 relative">
+                        <span class="absolute top-4 right-4 w-7 h-7 bg-pin-500 text-white rounded-full flex items-center justify-center font-bold text-xs">1</span>
+                        <div class="text-pin-500 text-2xl"><i class="fa-solid fa-globe"></i></div>
+                        <h4 class="font-bold text-sm text-gray-900 dark:text-white">Copy Address Bar URL</h4>
+                        <p class="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed">
+                            Navigate to Pinterest.com in Chrome, Safari, or Edge. Click on the video pin page and copy the URL straight from your browser's address bar.
+                        </p>
+                    </div>
+
+                    <div class="bg-gray-50 dark:bg-zinc-900 p-5 rounded-xl border border-gray-200 dark:border-zinc-800 space-y-3 relative">
+                        <span class="absolute top-4 right-4 w-7 h-7 bg-pin-500 text-white rounded-full flex items-center justify-center font-bold text-xs">2</span>
+                        <div class="text-pin-500 text-2xl"><i class="fa-solid fa-cloud-arrow-down"></i></div>
+                        <h4 class="font-bold text-sm text-gray-900 dark:text-white">Extract Media Streams</h4>
+                        <p class="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed">
+                            Paste the copied link into the PinFetch input box and hit Download. Our tool parses the highest available MP4 quality.
+                        </p>
+                    </div>
+
+                    <div class="bg-gray-50 dark:bg-zinc-900 p-5 rounded-xl border border-gray-200 dark:border-zinc-800 space-y-3 relative">
+                        <span class="absolute top-4 right-4 w-7 h-7 bg-pin-500 text-white rounded-full flex items-center justify-center font-bold text-xs">3</span>
+                        <div class="text-pin-500 text-2xl"><i class="fa-solid fa-hard-drive"></i></div>
+                        <h4 class="font-bold text-sm text-gray-900 dark:text-white">Save File to PC / Mac</h4>
+                        <p class="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed">
+                            Click Download next to 1080p Full HD. The video file will download instantly into your PC's Downloads folder.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bookmarklet Quick Access Tool -->
+            <div class="glass-card rounded-2xl p-6 mb-16 border border-gray-200 dark:border-zinc-800 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="space-y-1 text-center md:text-left">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center justify-center md:justify-start gap-2">
+                        <i class="fa-solid fa-bookmark text-pin-500"></i>
+                        <span>1-Click Pinterest Downloader Bookmarklet</span>
+                    </h3>
+                    <p class="text-xs text-gray-600 dark:text-zinc-400 max-w-xl">
+                        Drag this button to your browser's Bookmarks Bar. While browsing Pinterest, click the bookmarklet to instantly extract and download any video Pin!
+                    </p>
+                </div>
+                <div>
+                    <a id="bookmarkletLink" href="javascript:(function(){const pinUrl=encodeURIComponent(window.location.href);window.open('https://pin-downloader.example.com/?url='+pinUrl,'_blank');})();" onclick="event.preventDefault(); showToast('Drag this button into your Bookmarks Bar!', 'info')" class="px-5 py-3 bg-zinc-900 dark:bg-zinc-100 hover:bg-pin-500 dark:hover:bg-pin-500 text-white dark:text-zinc-900 hover:text-white dark:hover:text-white text-xs font-black rounded-xl shadow-md transition-all inline-flex items-center gap-2 cursor-grab">
+                        <i class="fa-solid fa-grip-lines-vertical"></i>
+                        📌 PinFetch Downloader
+                    </a>
+                </div>
+            </div>
+
+            <!-- FAQ Accordion Section -->
+            <div class="space-y-4 mb-16">
+                <div class="text-center space-y-2 mb-8">
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white" data-i18n="faqTitle">
+                        Frequently Asked Questions (FAQ)
+                    </h2>
+                    <p class="text-xs sm:text-sm text-gray-600 dark:text-zinc-400" data-i18n="faqSubtitle">
+                        Everything you need to know about downloading videos and media from Pinterest.
+                    </p>
+                </div>
+
+                <!-- FAQ Item 1 -->
+                <div class="glass-card rounded-xl border border-gray-200 dark:border-zinc-800 overflow-hidden">
+                    <button onclick="toggleFaq('faq1')" class="w-full p-4 text-left font-bold text-sm text-gray-900 dark:text-white flex items-center justify-between hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors">
+                        <span>Is PinFetch Pro free to use? Do I need an account?</span>
+                        <i id="faq1-icon" class="fa-solid fa-chevron-down text-pin-500 transition-transform"></i>
+                    </button>
+                    <div id="faq1-body" class="hidden px-4 pb-4 text-xs text-gray-600 dark:text-zinc-400 border-t border-gray-100 dark:border-zinc-800 pt-3 leading-relaxed">
+                        Yes! PinFetch Pro is 100% free with unlimited downloads. You do not need to register, create an account, or install third-party plugins.
+                    </div>
+                </div>
+
+                <!-- FAQ Item 2 -->
+                <div class="glass-card rounded-xl border border-gray-200 dark:border-zinc-800 overflow-hidden">
+                    <button onclick="toggleFaq('faq2')" class="w-full p-4 text-left font-bold text-sm text-gray-900 dark:text-white flex items-center justify-between hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors">
+                        <span>How do I download Pinterest videos on iPhone / iOS Safari?</span>
+                        <i id="faq2-icon" class="fa-solid fa-chevron-down text-pin-500 transition-transform"></i>
+                    </button>
+                    <div id="faq2-body" class="hidden px-4 pb-4 text-xs text-gray-600 dark:text-zinc-400 border-t border-gray-100 dark:border-zinc-800 pt-3 leading-relaxed">
+                        On iOS 13 and later, copy the Pinterest video link, paste it into PinFetch on Safari, and tap "Download". Safari will show a download prompt. The saved video will appear in your Safari "Downloads" folder and can be saved to your Photos app.
+                    </div>
+                </div>
+
+                <!-- FAQ Item 3 -->
+                <div class="glass-card rounded-xl border border-gray-200 dark:border-zinc-800 overflow-hidden">
+                    <button onclick="toggleFaq('faq3')" class="w-full p-4 text-left font-bold text-sm text-gray-900 dark:text-white flex items-center justify-between hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors">
+                        <span>Where are downloaded Pinterest videos saved on my device?</span>
+                        <i id="faq3-icon" class="fa-solid fa-chevron-down text-pin-500 transition-transform"></i>
+                    </button>
+                    <div id="faq3-body" class="hidden px-4 pb-4 text-xs text-gray-600 dark:text-zinc-400 border-t border-gray-100 dark:border-zinc-800 pt-3 leading-relaxed">
+                        Downloaded files are automatically stored in your device's default "Downloads" folder (or Files app on iOS / Download Manager on Android).
+                    </div>
+                </div>
+
+                <!-- FAQ Item 4 -->
+                <div class="glass-card rounded-xl border border-gray-200 dark:border-zinc-800 overflow-hidden">
+                    <button onclick="toggleFaq('faq4')" class="w-full p-4 text-left font-bold text-sm text-gray-900 dark:text-white flex items-center justify-between hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors">
+                        <span>Does PinFetch Pro support Story Pins and Animated GIFs?</span>
+                        <i id="faq4-icon" class="fa-solid fa-chevron-down text-pin-500 transition-transform"></i>
+                    </button>
+                    <div id="faq4-body" class="hidden px-4 pb-4 text-xs text-gray-600 dark:text-zinc-400 border-t border-gray-100 dark:border-zinc-800 pt-3 leading-relaxed">
+                        Yes! Our downloader automatically detects whether a Pin contains an MP4 video, a multi-page Story/Idea Pin, an animated GIF, or a high-res image, and provides the corresponding high-quality download options.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- History Slide-over Drawer / Modal -->
+    <div id="historyModal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex justify-end transition-opacity">
+        <div class="w-full max-w-md bg-white dark:bg-zinc-900 h-full p-6 flex flex-col justify-between shadow-2xl border-l border-gray-200 dark:border-zinc-800 overflow-y-auto">
+            <div class="space-y-4">
+                <div class="flex items-center justify-between border-b border-gray-200 dark:border-zinc-800 pb-4">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-pin-500"></i> Download History
+                    </h3>
+                    <button onclick="toggleHistoryModal()" class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- History Items List Container -->
+                <div id="historyList" class="space-y-3">
+                    <!-- Dynamic items rendered via JavaScript -->
+                </div>
+            </div>
+
+            <!-- History Actions -->
+            <div class="pt-4 border-t border-gray-200 dark:border-zinc-800 flex justify-between">
+                <button onclick="clearHistory()" class="text-xs text-red-500 hover:text-red-600 font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-trash-can"></i> Clear History
+                </button>
+                <button onclick="toggleHistoryModal()" class="px-4 py-2 bg-gray-200 dark:bg-zinc-800 text-xs font-bold rounded-lg text-gray-800 dark:text-zinc-200">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Element -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div id="toastContent" class="glass-card px-4 py-3 rounded-xl shadow-2xl border border-pin-500/40 flex items-center space-x-3 text-xs font-bold text-gray-900 dark:text-white">
+            <i id="toastIcon" class="fa-solid fa-circle-check text-pin-500 text-lg"></i>
+            <span id="toastMsg">Notification message</span>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <footer class="glass-card border-t border-gray-200 dark:border-zinc-800 py-8 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-full bg-pin-500 flex items-center justify-center text-white text-sm font-bold">
+                        <i class="fa-brands fa-pinterest"></i>
+                    </div>
+                    <span class="text-base font-extrabold text-gray-900 dark:text-white">PinFetch Pro</span>
+                </div>
+                
+                <p class="text-xs text-gray-500 dark:text-zinc-400 text-center md:text-left">
+                    &copy; 2026 PinFetch Pro. All rights reserved. Free Pinterest Video Downloader Tool.
+                </p>
+
+                <div class="flex space-x-4 text-xs text-gray-500 dark:text-zinc-400">
+                    <button onclick="showToast('PinFetch Pro is a free online tool to download personal media.', 'info')" class="hover:text-pin-500">Privacy Policy</button>
+                    <span>•</span>
+                    <button onclick="showToast('Not affiliated with or endorsed by Pinterest Inc.', 'info')" class="hover:text-pin-500">Terms of Use</button>
+                </div>
+            </div>
+
+            <div class="text-[11px] text-gray-400 dark:text-zinc-500 text-center border-t border-gray-200/50 dark:border-zinc-800/50 pt-4 leading-relaxed max-w-4xl mx-auto">
+                Disclaimer: PinFetch Pro is an independent media extraction utility and is not affiliated, associated, authorized, endorsed by, or in any way officially connected with Pinterest, Inc. All Pinterest logos, names, and trademarks belong to their respective owners. Users must respect content copyright laws.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Sample Mock Data for Instant Interactive Testing
+        const SAMPLE_PINS = {
+            video_recipe: {
+                id: 'recipe_101',
+                type: 'video',
+                title: 'Creamy Garlic Tuscan Chicken Pasta Recipe 🍝',
+                description: 'Quick 20-minute dinner idea! Ultra creamy sun-dried tomato and spinach pasta with grilled chicken.',
+                author: 'Chef Foodie Pins',
+                board: 'Quick Dinners & Recipes',
+                avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+                coverUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&auto=format&fit=crop&q=80',
+                likes: '28.4k',
+                saves: '14.1k',
+                duration: '00:30'
+            },
+            video_diy: {
+                id: 'diy_202',
+                type: 'video',
+                title: 'Aesthetic DIY Room Decor & Light Transformations ✨',
+                description: 'How to make cozy ambient lighting for your bedroom with simple DIY wood cutouts and fairy lights.',
+                author: 'Crafty Home Ideas',
+                board: 'Room Makeover Hacks',
+                avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+                coverUrl: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&auto=format&fit=crop&q=80',
+                likes: '45.8k',
+                saves: '32.0k',
+                duration: '00:48'
+            },
+            photo_4k: {
+                id: 'photo_303',
+                type: 'image',
+                title: 'Minimalist Japanese Garden & Misty Mountains Photography 🏞️',
+                description: 'Serene morning aesthetic photography from Kyoto, Japan. High resolution 4K desktop wallpaper.',
+                author: 'Wanderlust Lens',
+                board: 'Nature & Aesthetics',
+                avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+                imageUrl: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=1200&auto=format&fit=crop&q=80',
+                coverUrl: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800&auto=format&fit=crop&q=80',
+                likes: '12.9k',
+                saves: '9.3k',
+                duration: 'Photo'
+            },
+            gif_animation: {
+                id: 'gif_404',
+                type: 'gif',
+                title: 'Pixel Art Cozy Rainy Window Animation 🌧️',
+                description: 'Relaxing lo-fi pixel art loop of coffee and rain on the window pane.',
+                author: 'Pixel Artist Corner',
+                board: 'Lo-Fi Animations',
+                avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=100&auto=format&fit=crop&q=80',
+                imageUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdW4yZDF6MHltOHRwdG8xcDVrdGF2YWdmcnpsdnh4ODZxbGFpd3BhZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/L3P5oXqff6k7T/giphy.gif',
+                coverUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdW4yZDF6MHltOHRwdG8xcDVrdGF2YWdmcnpsdnh4ODZxbGFpd3BhZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/L3P5oXqff6k7T/giphy.gif',
+                likes: '19.5k',
+                saves: '11.2k',
+                duration: 'GIF Loop'
+            }
+        };
+
+        // Application State
+        let currentActivePin = null;
+        let downloadHistory = [];
+
+        // Language translations map
+        const i18n = {
+            en: {
+                history: "History",
+                fastFreeBadge: "Fast, Free & Unlimited Pinterest Downloader",
+                heroTitle: "Download Pinterest",
+                heroGIFs: "GIFs",
+                heroPhotos: "HD Photos",
+                heroSubtitle: "Paste any Pinterest Link or Pin URL below to extract high-resolution MP4 videos, full HD images, Story Pins, and MP3 audio in seconds.",
+                paste: "Paste",
+                downloadBtn: "DOWNLOAD",
+                supportedFormat: "Supported:",
+                safeGuarantee: "100% Safe & Direct Links",
+                tryDemo: "Try Demo Pins (Click to test instantly):",
+                feat1Title: "Lightning Fast Conversion",
+                feat1Desc: "Our cloud parser extracts original media URLs instantly without compressing or degrading video bitrates.",
+                feat2Title: "No Watermarks or Logos",
+                feat2Desc: "Download clean Pinterest videos and GIF animations in pure MP4 format, completely free of any unwanted overlays.",
+                feat3Title: "All Devices Supported",
+                feat3Desc: "Fully responsive experience designed for Android phones, iPhones (Safari), iPad, Mac OS, Windows, and Linux.",
+                howToTitle: "How to Download Videos from Pinterest",
+                howToSubtitle: "Follow these simple steps on Mobile App or Desktop Browser to save videos directly to your gallery.",
+                faqTitle: "Frequently Asked Questions (FAQ)",
+                faqSubtitle: "Everything you need to know about downloading videos and media from Pinterest."
+            },
+            es: {
+                history: "Historial",
+                fastFreeBadge: "Descargador de Pinterest rápido y gratuito",
+                heroTitle: "Descargar Vídeos de",
+                heroGIFs: "GIFs",
+                heroPhotos: "Fotos HD",
+                heroSubtitle: "Pega cualquier enlace de Pinterest a continuación para extraer vídeos MP4 en alta resolución, imágenes HD y audio MP3 en segundos.",
+                paste: "Pegar",
+                downloadBtn: "DESCARGAR",
+                supportedFormat: "Soportado:",
+                safeGuarantee: "100% Seguro y Enlaces Directos",
+                tryDemo: "Probar Pines de Demostración:",
+                feat1Title: "Conversión Ultra Rápida",
+                feat1Desc: "Nuestro extractor obtiene las URL de medios originales al instante sin comprimir la calidad del vídeo.",
+                feat2Title: "Sin Marcas de Agua",
+                feat2Desc: "Descarga vídeos limpios de Pinterest y animaciones GIF en formato MP4 puro.",
+                feat3Title: "Compatible con todos los dispositivos",
+                feat3Desc: "Diseñado para teléfonos Android, iPhone (Safari), iPad, Mac OS, Windows y Linux.",
+                howToTitle: "¿Cómo Descargar Vídeos de Pinterest?",
+                howToSubtitle: "Sigue estos sencillos pasos en la App Móvil o Navegador para guardar vídeos.",
+                faqTitle: "Preguntas Frecuentes (FAQ)",
+                faqSubtitle: "Todo lo que necesitas saber sobre la descarga de vídeos e imágenes de Pinterest."
+            },
+            fr: {
+                history: "Historique",
+                fastFreeBadge: "Téléchargeur Pinterest Rapide & Gratuit",
+                heroTitle: "Télécharger Vidéos",
+                heroGIFs: "GIFs",
+                heroPhotos: "Photos HD",
+                heroSubtitle: "Collez n'importe quel lien Pinterest ci-dessous pour extraire des vidéos MP4 haute résolution, des images HD et du son MP3.",
+                paste: "Coller",
+                downloadBtn: "TÉLÉCHARGER",
+                supportedFormat: "Supporté:",
+                safeGuarantee: "100% Sûr et Liens Directs",
+                tryDemo: "Essayer des Démo Pins:",
+                feat1Title: "Conversion Éclair",
+                feat1Desc: "Notre extracteur obtient directement les flux vidéo d'origine sans perte de qualité.",
+                feat2Title: "Sans Filigrane",
+                feat2Desc: "Téléchargez des vidéos Pinterest et GIFs animés sans filigrane ni logo.",
+                feat3Title: "Tous Appareils Supportés",
+                feat3Desc: "Compatible avec Android, iPhone (Safari), iPad, Mac OS et Windows.",
+                howToTitle: "Comment Télécharger une Vidéo Pinterest?",
+                howToSubtitle: "Suivez ces étapes simples sur l'application mobile ou sur ordinateur.",
+                faqTitle: "Foire Aux Questions (FAQ)",
+                faqSubtitle: "Tout ce que vous devez savoir sur le téléchargement de contenu Pinterest."
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Load saved download history from local storage
+            loadHistoryFromStorage();
+
+            // Setup input listener to show/hide clear button
+            const input = document.getElementById('pinUrlInput');
+            input.addEventListener('input', (e) => {
+                const clearBtn = document.getElementById('clearBtn');
+                if (e.target.value.trim().length > 0) {
+                    clearBtn.classList.remove('hidden');
+                } else {
+                    clearBtn.classList.add('hidden');
+                }
+            });
+        });
+
+        // Toggle Dark / Light Theme
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.className = 'fa-solid fa-sun';
+                showToast('Light mode enabled', 'info');
+            } else {
+                html.classList.add('dark');
+                icon.className = 'fa-solid fa-moon';
+                showToast('Dark mode enabled', 'info');
+            }
+        }
+
+        // Paste URL from Clipboard
+        async function pasteFromClipboard() {
+            try {
+                if (navigator.clipboard && navigator.clipboard.readText) {
+                    const text = await navigator.clipboard.readText();
+                    if (text) {
+                        const input = document.getElementById('pinUrlInput');
+                        input.value = text;
+                        document.getElementById('clearBtn').classList.remove('hidden');
+                        showToast('Link pasted from clipboard!', 'success');
+                    } else {
+                        showToast('Clipboard is empty', 'warning');
+                    }
+                } else {
+                    showToast('Clipboard access not allowed by browser', 'warning');
+                }
+            } catch (err) {
+                showToast('Please paste manually using Ctrl+V or tap & hold', 'info');
+            }
+        }
+
+        // Clear Search Input
+        function clearInput() {
+            const input = document.getElementById('pinUrlInput');
+            input.value = '';
+            document.getElementById('clearBtn').classList.add('hidden');
+            input.focus();
+        }
+
+        // Main Form Submission Handler
+        function handleDownloadSubmit(e) {
+            e.preventDefault();
+            const urlInput = document.getElementById('pinUrlInput').value.trim();
+
+            if (!urlInput) {
+                showToast('Please paste a Pinterest URL', 'warning');
+                return;
+            }
+
+            // Basic validation for Pinterest link pattern
+            const isPinterest = urlInput.includes('pinterest.com') || urlInput.includes('pin.it') || urlInput.includes('pinterest.');
+            if (!isPinterest) {
+                showToast('Please enter a valid Pinterest link (e.g., https://pin.it/... or pinterest.com/pin/...)', 'warning');
+            }
+
+            // Start Extraction Animation & Pipeline
+            processPinUrl(urlInput);
+        }
+
+        // Quick Sample Pin Loader
+        function loadSamplePin(sampleKey) {
+            const sample = SAMPLE_PINS[sampleKey];
+            if (!sample) return;
+
+            document.getElementById('pinUrlInput').value = `https://pinterest.com/pin/demo-${sample.id}/`;
+            document.getElementById('clearBtn').classList.remove('hidden');
+            
+            showToast(`Loaded sample pin: ${sample.title.slice(0, 25)}...`, 'info');
+            renderPinResult(sample);
+        }
+
+        // Processing Pipeline Engine
+        function processPinUrl(url) {
+            const loadingState = document.getElementById('loadingState');
+            const resultCard = document.getElementById('resultCard');
+            const loadingBar = document.getElementById('loadingBar');
+            const loadingStatusText = document.getElementById('loadingStatusText');
+
+            resultCard.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+            loadingBar.style.width = '15%';
+
+            // Scroll down smoothly to loader
+            loadingState.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Step 1: Simulated URL Parsing & Metadata Extraction
+            setTimeout(() => {
+                loadingBar.style.width = '45%';
+                loadingStatusText.innerText = 'Extracting original video & image streams...';
+            }, 600);
+
+            // Step 2: Quality Resolution Assembly
+            setTimeout(() => {
+                loadingBar.style.width = '80%';
+                loadingStatusText.innerText = 'Building high-speed download links...';
+            }, 1200);
+
+            // Step 3: Complete & Render Result
+            setTimeout(() => {
+                loadingBar.style.width = '100%';
+
+                // Determine if it looks like image or video or default to high quality recipe video demo
+                let parsedPinData = SAMPLE_PINS.video_recipe;
+                if (url.includes('photo') || url.includes('image')) {
+                    parsedPinData = SAMPLE_PINS.photo_4k;
+                } else if (url.includes('gif')) {
+                    parsedPinData = SAMPLE_PINS.gif_animation;
+                } else if (url.includes('diy') || url.includes('reel')) {
+                    parsedPinData = SAMPLE_PINS.video_diy;
+                }
+
+                loadingState.classList.add('hidden');
+                renderPinResult(parsedPinData);
+                saveToHistory(parsedPinData, url);
+                showToast('Media extracted successfully!', 'success');
+            }, 1800);
+        }
+
+        // Render Pin Result Card UI
+        function renderPinResult(pinData) {
+            currentActivePin = pinData;
+
+            const resultCard = document.getElementById('resultCard');
+            const videoEl = document.getElementById('resultVideo');
+            const imageEl = document.getElementById('resultImage');
+            const videoExtraControls = document.getElementById('videoExtraControls');
+
+            // Metadata UI population
+            document.getElementById('authorAvatar').src = pinData.avatar;
+            document.getElementById('authorName').innerText = pinData.author;
+            document.getElementById('boardName').innerText = `Board: ${pinData.board}`;
+            document.getElementById('pinTitle').innerText = pinData.title;
+            document.getElementById('pinDescription').innerText = pinData.description;
+            document.getElementById('pinLikes').innerHTML = `<i class="fa-solid fa-heart text-red-500 mr-1"></i> ${pinData.likes}`;
+            document.getElementById('pinSaves').innerHTML = `<i class="fa-solid fa-bookmark text-pin-500 mr-1"></i> ${pinData.saves}`;
+            document.getElementById('pinDuration').innerHTML = `<i class="fa-solid fa-clock mr-1"></i> ${pinData.duration}`;
+
+            const mediaTypeLabel = document.getElementById('mediaTypeLabel');
+            const mediaTypeIcon = document.getElementById('mediaTypeIcon');
+
+            // Handle Video vs Image / GIF player display
+            if (pinData.type === 'video') {
+                videoEl.src = pinData.videoUrl;
+                videoEl.poster = pinData.coverUrl;
+                videoEl.classList.remove('hidden');
+                imageEl.classList.add('hidden');
+                videoExtraControls.classList.remove('hidden');
+
+                mediaTypeLabel.innerText = '1080p HD Video';
+                mediaTypeIcon.className = 'fa-solid fa-video text-pin-500';
+
+                // Re-populate Download Links List for Video
+                document.getElementById('downloadLinksList').innerHTML = `
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 hover:border-pin-500 transition-colors">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-9 h-9 rounded-lg bg-pin-500/10 text-pin-500 flex items-center justify-center font-bold text-xs">1080p</div>
+                            <div>
+                                <p class="text-xs font-bold text-gray-900 dark:text-white">MP4 Video (Full HD)</p>
+                                <p class="text-[11px] text-gray-500 dark:text-zinc-400">Original Bitrate • ~18.4 MB</p>
+                            </div>
+                        </div>
+                        <button onclick="triggerDirectDownload('1080p')" class="px-4 py-2 bg-pin-500 hover:bg-pin-600 active:bg-pin-700 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow">
+                            <i class="fa-solid fa-download"></i> Download MP4
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 hover:border-pin-500 transition-colors">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-9 h-9 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold text-xs">720p</div>
+                            <div>
+                                <p class="text-xs font-bold text-gray-900 dark:text-white">MP4 Video (HD Standard)</p>
+                                <p class="text-[11px] text-gray-500 dark:text-zinc-400">Mobile Fast • ~9.2 MB</p>
+                            </div>
+                        </div>
+                        <button onclick="triggerDirectDownload('720p')" class="px-4 py-2 bg-gray-800 hover:bg-gray-900 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5">
+                            <i class="fa-solid fa-download"></i> Download MP4
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 hover:border-pin-500 transition-colors">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-xs">MP3</div>
+                            <div>
+                                <p class="text-xs font-bold text-gray-900 dark:text-white">Audio Only (320 kbps)</p>
+                                <p class="text-[11px] text-gray-500 dark:text-zinc-400">Soundtrack Extract • ~2.1 MB</p>
+                            </div>
+                        </div>
+                        <button onclick="triggerDirectDownload('audio')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5">
+                            <i class="fa-solid fa-music"></i> Save MP3
+                        </button>
+                    </div>
+                `;
+
+            } else {
+                // Image or GIF pin type
+                videoEl.pause();
+                videoEl.classList.add('hidden');
+                imageEl.src = pinData.imageUrl;
+                imageEl.classList.remove('hidden');
+                videoExtraControls.classList.add('hidden');
+
+                mediaTypeLabel.innerText = pinData.type === 'gif' ? 'Animated GIF' : 'Ultra HD Image';
+                mediaTypeIcon.className = pinData.type === 'gif' ? 'fa-solid fa-bolt text-amber-500' : 'fa-solid fa-image text-emerald-500';
+
+                // Re-populate Download Links List for Image
+                document.getElementById('downloadLinksList').innerHTML = `
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 hover:border-pin-500 transition-colors">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-xs">4K</div>
+                            <div>
+                                <p class="text-xs font-bold text-gray-900 dark:text-white">${pinData.type === 'gif' ? 'Original GIF File' : 'Original HD Photo (JPG/PNG)'}</p>
+                                <p class="text-[11px] text-gray-500 dark:text-zinc-400">Maximum Quality • ~4.5 MB</p>
+                            </div>
+                        </div>
+                        <button onclick="triggerDirectDownload('image_hd')" class="px-4 py-2 bg-pin-500 hover:bg-pin-600 active:bg-pin-700 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow">
+                            <i class="fa-solid fa-download"></i> Save Original
+                        </button>
+                    </div>
+                `;
+            }
+
+            resultCard.classList.remove('hidden');
+            resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Change video playback rate
+        function changeVideoSpeed(rate) {
+            const video = document.getElementById('resultVideo');
+            if (video) {
+                video.playbackRate = parseFloat(rate);
+                showToast(`Playback speed set to ${rate}x`, 'info');
+            }
+        }
+
+        // Toggle video looping
+        function toggleLoopVideo() {
+            const video = document.getElementById('resultVideo');
+            const loopStatus = document.getElementById('loopStatus');
+            if (video) {
+                video.loop = !video.loop;
+                loopStatus.innerText = video.loop ? 'On' : 'Off';
+                showToast(`Video loop ${video.loop ? 'enabled' : 'disabled'}`, 'info');
+            }
+        }
+
+        // Trigger Download Function (Creates anchor element for file saving)
+        function triggerDirectDownload(quality) {
+            if (!currentActivePin) return;
+
+            let downloadUrl = currentActivePin.coverUrl;
+            let filename = `Pinterest_${currentActivePin.id}.jpg`;
+
+            if (quality === '1080p' || quality === '720p') {
+                downloadUrl = currentActivePin.videoUrl || currentActivePin.coverUrl;
+                filename = `Pinterest_Video_${quality}_${currentActivePin.id}.mp4`;
+            } else if (quality === 'audio') {
+                downloadUrl = currentActivePin.videoUrl || currentActivePin.coverUrl;
+                filename = `Pinterest_Audio_${currentActivePin.id}.mp3`;
+            } else if (quality === 'image_hd') {
+                downloadUrl = currentActivePin.imageUrl || currentActivePin.coverUrl;
+                filename = `Pinterest_Photo_${currentActivePin.id}.${currentActivePin.type === 'gif' ? 'gif' : 'jpg'}`;
+            }
+
+            showToast(`Downloading ${filename}...`, 'success');
+
+            // Create temporary anchor to force trigger file save
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = filename;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // Copy direct media link to clipboard
+        function copyDirectMediaUrl() {
+            if (!currentActivePin) return;
+            const targetUrl = currentActivePin.videoUrl || currentActivePin.imageUrl || currentActivePin.coverUrl;
+
+            // Use execCommand copy as fallback for iframe environment
+            const dummy = document.createElement('input');
+            document.body.appendChild(dummy);
+            dummy.value = targetUrl;
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+
+            showToast('Direct media URL copied to clipboard!', 'success');
+        }
+
+        // Save Pin to Local Storage History
+        function saveToHistory(pin, url) {
+            const historyItem = {
+                id: pin.id,
+                title: pin.title,
+                type: pin.type,
+                coverUrl: pin.coverUrl,
+                originalUrl: url,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+
+            // Avoid duplicate additions
+            downloadHistory = downloadHistory.filter(item => item.id !== pin.id);
+            downloadHistory.unshift(historyItem);
+
+            if (downloadHistory.length > 20) {
+                downloadHistory.pop(); // keep last 20
+            }
+
+            try {
+                localStorage.setItem('pin_fetch_history', JSON.stringify(downloadHistory));
+            } catch (e) {
+                console.warn('LocalStorage unavailable');
+            }
+
+            updateHistoryBadge();
+        }
+
+        // Load History from Local Storage
+        function loadHistoryFromStorage() {
+            try {
+                const stored = localStorage.getItem('pin_fetch_history');
+                if (stored) {
+                    downloadHistory = JSON.parse(stored);
+                }
+            } catch (e) {
+                downloadHistory = [];
+            }
+            updateHistoryBadge();
+        }
+
+        // Update history badge counter
+        function updateHistoryBadge() {
+            const badge = document.getElementById('historyBadge');
+            if (downloadHistory.length > 0) {
+                badge.innerText = downloadHistory.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // Render History Items in Drawer Modal
+        function renderHistoryList() {
+            const container = document.getElementById('historyList');
+            if (downloadHistory.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-400 dark:text-zinc-500 space-y-2">
+                        <i class="fa-solid fa-folder-open text-3xl"></i>
+                        <p class="text-xs">No download history yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = downloadHistory.map(item => `
+                <div class="flex items-center justify-between p-3 rounded-xl bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700/50 hover:border-pin-500 transition-all">
+                    <div class="flex items-center space-x-3 overflow-hidden">
+                        <img src="${item.coverUrl}" class="w-12 h-12 rounded-lg object-cover shrink-0" alt="Cover" />
+                        <div class="truncate">
+                            <p class="text-xs font-bold text-gray-900 dark:text-white truncate">${item.title}</p>
+                            <span class="text-[10px] text-gray-500 dark:text-zinc-400 capitalize">${item.type} • ${item.timestamp}</span>
+                        </div>
+                    </div>
+                    <button onclick="reloadFromHistory('${item.id}')" class="px-2.5 py-1.5 bg-pin-500 hover:bg-pin-600 text-white rounded-lg text-xs font-bold shrink-0 ml-2">
+                        View
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Clear All History
+        function clearHistory() {
+            downloadHistory = [];
+            try {
+                localStorage.removeItem('pin_fetch_history');
+            } catch (e) {}
+            renderHistoryList();
+            updateHistoryBadge();
+            showToast('Download history cleared', 'info');
+        }
+
+        // Re-load a item from history
+        function reloadFromHistory(id) {
+            const found = Object.values(SAMPLE_PINS).find(p => p.id === id) || SAMPLE_PINS.video_recipe;
+            toggleHistoryModal();
+            renderPinResult(found);
+            showToast('Re-loaded pin details', 'info');
+        }
+
+        // Toggle History Modal Drawer
+        function toggleHistoryModal() {
+            const modal = document.getElementById('historyModal');
+            if (modal.classList.contains('hidden')) {
+                renderHistoryList();
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // Switch How-To Guide Tabs
+        function switchGuideTab(tab) {
+            const tabApp = document.getElementById('tabApp');
+            const tabWeb = document.getElementById('tabWeb');
+            const contentApp = document.getElementById('guideAppContent');
+            const contentWeb = document.getElementById('guideWebContent');
+
+            if (tab === 'app') {
+                tabApp.className = 'px-6 py-3 font-bold text-sm border-b-2 border-pin-500 text-pin-500 flex items-center gap-2 transition-all';
+                tabWeb.className = 'px-6 py-3 font-bold text-sm border-b-2 border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white flex items-center gap-2 transition-all';
+                contentApp.classList.remove('hidden');
+                contentWeb.classList.add('hidden');
+            } else {
+                tabWeb.className = 'px-6 py-3 font-bold text-sm border-b-2 border-pin-500 text-pin-500 flex items-center gap-2 transition-all';
+                tabApp.className = 'px-6 py-3 font-bold text-sm border-b-2 border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white flex items-center gap-2 transition-all';
+                contentWeb.classList.remove('hidden');
+                contentApp.classList.add('hidden');
+            }
+        }
+
+        // FAQ Toggle Accordion
+        function toggleFaq(id) {
+            const body = document.getElementById(`${id}-body`);
+            const icon = document.getElementById(`${id}-icon`);
+
+            if (body.classList.contains('hidden')) {
+                body.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                body.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // Change UI Language
+        function changeLanguage(langCode) {
+            const dict = i18n[langCode] || i18n.en;
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key]) {
+                    el.innerText = dict[key];
+                }
+            });
+            showToast(`Language switched to ${langCode.toUpperCase()}`, 'info');
+        }
+
+        // Notification Toast Display System
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.innerText = message;
+
+            if (type === 'success') {
+                toastIcon.className = 'fa-solid fa-circle-check text-pin-500 text-lg';
+            } else if (type === 'warning') {
+                toastIcon.className = 'fa-solid fa-triangle-exclamation text-amber-500 text-lg';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-info text-blue-500 text-lg';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
